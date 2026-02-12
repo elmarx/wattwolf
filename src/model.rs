@@ -1,7 +1,7 @@
 use crate::model::MeasurementError::{MissingValue, UnexpectedValueType};
+use sml_rs::parser::OctetStr;
 use sml_rs::parser::common::Value;
 use sml_rs::parser::complete::{File, MessageBody};
-use sml_rs::parser::OctetStr;
 use thiserror::Error;
 
 #[cfg(not(feature = "producer_consumer_swapped"))]
