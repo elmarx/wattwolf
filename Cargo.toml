@@ -11,7 +11,6 @@ producer_consumer_swapped = []
 
 
 [dependencies]
-anyhow = "1.0.101"
 serialport = "4.8.1"
 sml-rs = "0.4.0"
 thiserror = "2.0.18"
