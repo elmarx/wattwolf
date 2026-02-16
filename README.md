@@ -21,6 +21,24 @@ connection: &con01
     kickolduser: true
 ```
 
+### MQTT Configuration
+
+Setup the MQTT connection to publish [discovery messages](https://www.home-assistant.io/integrations/sensor.mqtt/) and of course the actual sensor values.
+
+*username*, *password* and *host* may be overriden via environment-variables:
+
+```shell
+export MQTT_USERNAME=your_username
+export MQTT_PASSWORD=your_password
+export MQTT_HOST=your_host
+```
+
+Run a development MQTT server with:
+
+```shell
+docker run -d -p 1883:1883 eclipse-mosquitto
+```
+
 ### Sensors
 
 Sensors need to be specified by their OBIS code. All other settings are used for [home assistant's auto-discovery of the sensor](https://www.home-assistant.io/integrations/sensor.mqtt/).

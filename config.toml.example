@@ -10,6 +10,14 @@ socket = "localhost:2000"
 # OR use a serial device:
 # device = "/dev/ttyUSB0"
 
+# MQTT Configuration
+[mqtt]
+host = "localhost" # Can be overridden with MQTT_HOST env var
+port = 1883  # Optional, defaults to 1883
+topic_prefix = "wattwolf"  # Optional, defaults to "wattwolf"
+# username = "your_mqtt_username"  # Optional, can be overridden with MQTT_USERNAME env var
+# password = "your_mqtt_password"  # Optional, can be overridden with MQTT_PASSWORD env var
+
 # Sensor Definitions
 # Each sensor corresponds to a specific OBIS code in the SML data stream
 # OBIS codes can be specified in multiple formats:

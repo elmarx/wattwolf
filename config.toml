@@ -2,6 +2,13 @@
 socket = "localhost:2000"
 # device = "/dev/ttyUSB0"
 
+[mqtt]
+host = "localhost" # Can be overriden with MQTT_HOST env var
+port = 1883
+topic_prefix = "wattwolf"
+# username = "mqtt_user"  # Can be overridden with MQTT_USERNAME env var
+# password = "mqtt_password"  # Can be overridden with MQTT_PASSWORD env var
+
 # [[sensors]]
 # name = "consumed"
 # friendly_name = "Energy Consumed"
