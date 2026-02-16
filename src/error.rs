@@ -1,5 +1,5 @@
-use crate::model::MeasurementError;
 use sml_rs::ReadParsedError;
+use sml_rs::parser::OctetStr;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -24,4 +24,14 @@ pub enum WattwolfError {
 
     #[error(transparent)]
     Sml(#[from] MeasurementError),
+}
+
+#[derive(Error, Debug)]
+pub enum MeasurementError {
+    #[error("required message `GetListResponse` not found")]
+    ListResponseNotFound,
+    #[error("got a ListEntry with an unexpected value type for OBIS-type `{0:?}`")]
+    UnexpectedValueType(OctetStr<'static>),
+    #[error("required value for OBIS-type `{0:?}` not found")]
+    MissingValue(OctetStr<'static>),
 }

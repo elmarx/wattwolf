@@ -1,68 +1,53 @@
-use crate::model::MeasurementError::{MissingValue, UnexpectedValueType};
-use sml_rs::parser::OctetStr;
-use sml_rs::parser::common::Value;
-use sml_rs::parser::complete::{File, MessageBody};
-use thiserror::Error;
+use crate::config::Sensor;
+use crate::error::MeasurementError;
 
-#[cfg(not(feature = "producer_consumer_swapped"))]
-const OBIS_CONSUMED: OctetStr<'_> = &[1, 0, 1, 8, 0, 255];
-#[cfg(feature = "producer_consumer_swapped")]
-const OBIS_PRODUCED: OctetStr<'_> = &[1, 0, 1, 8, 0, 255];
-
-#[cfg(not(feature = "producer_consumer_swapped"))]
-const OBIS_PRODUCED: OctetStr<'_> = &[1, 0, 2, 8, 0, 255];
-
-#[cfg(feature = "producer_consumer_swapped")]
-const OBIS_CONSUMED: OctetStr<'_> = &[1, 0, 2, 8, 0, 255];
-
-#[derive(Debug, PartialEq, Default)]
-pub struct Measurement {
-    pub consumed: u64,
-    pub produced: u64,
+#[derive(Debug, PartialEq)]
+pub struct Measurement<'a> {
+    sensor: &'a Sensor,
+    pub value: u64,
 }
-#[derive(Error, Debug)]
-pub enum MeasurementError {
-    #[error("required message `GetListResponse` not found")]
-    ListResponseNotFound,
-    #[error("got a ListEntry with an unexpected value type for OBIS-type `{0:?}`")]
-    UnexpectedValueType(OctetStr<'static>),
-    #[error("required value for OBIS-type `{0:?}` not found")]
-    MissingValue(OctetStr<'static>),
-}
-impl TryFrom<File<'_>> for Measurement {
-    type Error = MeasurementError;
 
-    fn try_from(value: File<'_>) -> Result<Self, Self::Error> {
-        let list_response = value
-            .messages
+pub fn read_measurement<'a>(
+    file: &sml_rs::parser::complete::File,
+    sensors: &'a [Sensor],
+) -> Result<Vec<Measurement<'a>>, MeasurementError> {
+    let list_response = file
+        .messages
+        .iter()
+        .find_map(|msg| {
+            if let sml_rs::parser::complete::MessageBody::GetListResponse(resp) = &msg.message_body
+            {
+                Some(resp)
+            } else {
+                None
+            }
+        })
+        .ok_or(MeasurementError::ListResponseNotFound)?;
+
+    let mut measurements = Vec::new();
+
+    for sensor in sensors {
+        let entry = list_response
+            .val_list
             .iter()
-            .find_map(|msg| match &msg.message_body {
-                MessageBody::GetListResponse(r) => Some(&r.val_list),
-                _ => None,
-            })
-            .ok_or(MeasurementError::ListResponseNotFound)?;
+            .find(|entry| entry.obj_name == sensor.obis.exact)
+            .ok_or(MeasurementError::MissingValue(sensor.obis.exact))?;
 
-        let result = list_response.iter().try_fold::<_, _, _>(
-            (None, None),
-            |(consumed, produced), cur| match (cur.obj_name, &cur.value) {
-                (OBIS_CONSUMED, Value::U64(consumed)) => Ok((Some(*consumed), produced)),
-                (OBIS_CONSUMED, _) => Err(UnexpectedValueType(OBIS_CONSUMED)),
-                (OBIS_PRODUCED, Value::U64(produced)) => Ok((consumed, Some(*produced))),
-                (OBIS_PRODUCED, _) => Err(UnexpectedValueType(OBIS_CONSUMED)),
-                _ => Ok((consumed, produced)),
-            },
-        )?;
-
-        match result {
-            (Some(consumed), Some(produced)) => Ok(Measurement { consumed, produced }),
-            (Some(_), _) => Err(MissingValue(OBIS_PRODUCED)),
-            _ => Err(MissingValue(OBIS_CONSUMED)),
+        match &entry.value {
+            sml_rs::parser::common::Value::U64(val) => measurements.push(Measurement {
+                sensor,
+                value: *val,
+            }),
+            _ => return Err(MeasurementError::UnexpectedValueType(sensor.obis.exact)),
         }
     }
+
+    Ok(measurements)
 }
 
 #[cfg(test)]
 mod test {
+    use crate::config::Sensor;
     use crate::model::Measurement;
     use sml_rs::parser::common::Status::Status32;
     use sml_rs::parser::common::Time::SecIndex;
@@ -153,12 +138,35 @@ mod test {
             ],
         };
 
-        let expected = Measurement {
-            consumed: 8564,
-            produced: 23152,
-        };
+        let sample_sensors: Vec<Sensor> = vec![
+            Sensor {
+                name: "consumed".to_string(),
+                friendly_name: "Energy Consumed".to_string(),
+                obis: &crate::obis::OBIS_1_8_0,
+                device_class: None,
+                state_class: None,
+            },
+            Sensor {
+                name: "produced".to_string(),
+                friendly_name: "Energy Produced".to_string(),
+                obis: &crate::obis::OBIS_2_8_0,
+                device_class: None,
+                state_class: None,
+            },
+        ];
 
-        let actual = sample.try_into().unwrap();
+        let expected = vec![
+            Measurement {
+                sensor: &sample_sensors[0],
+                value: 23152,
+            },
+            Measurement {
+                sensor: &sample_sensors[1],
+                value: 8564,
+            },
+        ];
+
+        let actual = crate::model::read_measurement(&sample, &sample_sensors).unwrap();
         assert_eq!(expected, actual);
     }
 }

@@ -37,16 +37,22 @@ fn main() -> Result<(), WattwolfError> {
     let mut sml_reader = sml_rs::SmlReader::from_reader(reader);
 
     loop {
-        let measurement = sml_reader
+        let measurements = sml_reader
             .next::<File>()
             .ok_or(WattwolfError::UnexpectedEndOfStream)
             .and_then(|res| -> Result<_, WattwolfError> {
                 let file = res.map_err(WattwolfError::ReadError)?;
-                Ok(file)
+
+                if config.debug {
+                    println!("Raw SML file: {file:#?}");
+                }
+
+                let measurements = model::read_measurement(&file, config.sensors.as_slice())?;
+                Ok(measurements)
             });
 
-        match measurement {
-            Ok(measurement) => println!("Measurement: {measurement:#?}"),
+        match measurements {
+            Ok(measurement) => println!("{measurement:#?}"),
             Err(e) => eprintln!("Error reading measurement: {e}"),
         }
     }

@@ -5,11 +5,6 @@ edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[features]
-default = ["producer_consumer_swapped"]
-producer_consumer_swapped = []
-
-
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serialport = "4.8.1"

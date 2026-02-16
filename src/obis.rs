@@ -18,13 +18,13 @@ pub struct ObisKeyFigure {
 }
 
 // Static instances for each OBIS key figure
-static OBIS_1_8_0: ObisKeyFigure = ObisKeyFigure {
+pub(crate) static OBIS_1_8_0: ObisKeyFigure = ObisKeyFigure {
     exact: &[1, 0, 1, 8, 0, 255],
     simplified: "1.8.0",
     unit: Unit::Kwh,
 };
 
-static OBIS_2_8_0: ObisKeyFigure = ObisKeyFigure {
+pub(crate) static OBIS_2_8_0: ObisKeyFigure = ObisKeyFigure {
     exact: &[1, 0, 2, 8, 0, 255],
     simplified: "2.8.0",
     unit: Unit::Kwh,
