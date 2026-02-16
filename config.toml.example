@@ -1,0 +1,46 @@
+# Wattwolf Configuration File
+#
+# This file configures the connection to your smart meter and defines
+# which sensors to read from it.
+
+# Connection Configuration
+# Choose either 'socket' for TCP connection (if device is "exported" via ser2net) or 'device' for (local) serial port
+[connection]
+socket = "localhost:2000"
+# OR use a serial device:
+# device = "/dev/ttyUSB0"
+
+# Sensor Definitions
+# Each sensor corresponds to a specific OBIS code in the SML data stream
+# OBIS codes can be specified in multiple formats:
+#   - "1.8.0" (simplified, as shown in the meter)
+#   - "1-0:1.8.0" (specifying medium and channel)
+#   - "1-0:1.8.0*255" (full notation)
+# Best overview of different OBIS codes I found is in German Wikipedia: https://de.wikipedia.org/wiki/OBIS-Kennzahlen#Elektrische_Energie
+
+# For our meter, the values for 1.8.0 and 2.8.0 are interchanged. Probably values have been switched here.
+
+[[sensors]]
+name = "consumed"
+friendly_name = "Energy Consumed"
+obis = "1-0:1.8.0*255"
+device_class = "energy"
+state_class = "total_increasing"
+
+[[sensors]]
+name = "produced"
+friendly_name = "Energy Produced"
+obis = "1-0:2.8.0*255"
+device_class = "energy"
+state_class = "total_increasing"
+
+# Additional sensor examples (not yet implemented!):
+#
+# Depending on your model, these values might need to be activated (sometimes via PIN you have to request from your electricity supplier)
+# [[sensors]]
+# name = "current_power"
+# friendly_name = "Current Power"
+# obis = "1-0:1.6.0*255"
+# device_class = "power"
+# state_class = "measurement"
+

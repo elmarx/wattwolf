@@ -1,0 +1,17 @@
+[connection]
+socket = "localhost:2000"
+# device = "/dev/ttyUSB0"
+
+[[sensors]]
+name = "consumed"
+friendly_name = "Energy Consumed"
+obis = "1.8.0"
+device_class = "energy"
+state_class = "total_increasing"
+
+[[sensors]]
+name = "produced"
+friendly_name = "Energy Produced"
+obis = "2.8.0"
+device_class = "energy"
+state_class = "total_increasing"

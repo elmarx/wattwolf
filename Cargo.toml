@@ -11,6 +11,9 @@ producer_consumer_swapped = []
 
 
 [dependencies]
+serde = { version = "1.0", features = ["derive"] }
 serialport = "4.8.1"
 sml-rs = "0.4.0"
 thiserror = "2.0.18"
+toml = "0.8.23"
+phf = { version = "0.13.1", features = ["macros"] }
