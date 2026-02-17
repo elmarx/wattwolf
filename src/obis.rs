@@ -3,10 +3,12 @@ use serde::{Deserialize, Serialize};
 use serde::{Deserializer, Serializer};
 use sml_rs::parser::OctetStr;
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, strum::AsRefStr)]
 #[serde(rename_all = "lowercase")]
 pub enum Unit {
+    #[strum(to_string = "kW")]
     Kw,
+    #[strum(to_string = "kWh")]
     Kwh,
 }
 

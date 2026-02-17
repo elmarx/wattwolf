@@ -1,6 +1,7 @@
-use crate::config::MqttConfig;
+use crate::config::{MqttConfig, Sensor};
 use crate::error::WattwolfError;
 use rumqttc::{Client, Connection, MqttOptions, QoS};
+use serde_json::json;
 use std::cell::RefCell;
 use std::time::Duration;
 
@@ -43,6 +44,55 @@ impl MqttPublisher {
                 }
             }
         });
+    }
+
+    /// Publish Home Assistant auto-discovery messages for all sensors
+    pub fn publish_discovery(&self, sensors: &[Sensor]) -> Result<(), WattwolfError> {
+        for sensor in sensors {
+            self.publish_sensor_discovery(sensor)?;
+        }
+        Ok(())
+    }
+
+    /// Publish Home Assistant auto-discovery message for a single sensor
+    fn publish_sensor_discovery(&self, sensor: &Sensor) -> Result<(), WattwolfError> {
+        // device class as configured by the user
+        let device_class = sensor
+            .device_class
+            .as_ref()
+            .map(std::convert::AsRef::as_ref);
+        // unit is hardcoded given the obis numbers
+        let unit = sensor.obis.unit.as_ref();
+
+        // see discovery payload: https://www.home-assistant.io/integrations/mqtt/#single-component-discovery-payload
+        let discovery_payload = json!({
+            "name": sensor.friendly_name,
+            "unique_id": format!("wattwolf_{}", sensor.name),
+            "state_topic": format!("{}/{}/state", self.topic_prefix, sensor.name),
+            "unit_of_measurement": unit,
+            "device_class": device_class,
+            "state_class": sensor.state_class.as_deref(),
+            "device": {
+                "identifiers": ["wattwolf"],
+                "name": "Wattwolf Smart Meter",
+                "model": "SML Reader",
+                "manufacturer": "Wattwolf"
+            }
+        });
+
+        // see discovery topic documentation here: https://www.home-assistant.io/integrations/mqtt/#discovery-topic
+        let discovery_topic = format!("homeassistant/sensor/wattwolf/{}/config", sensor.name);
+
+        self.client
+            .publish(
+                discovery_topic,
+                QoS::AtLeastOnce,
+                true,
+                discovery_payload.to_string(),
+            )
+            .map_err(WattwolfError::MqttHaDiscovery)?;
+
+        Ok(())
     }
 
     /// Publish a measurement value for a sensor

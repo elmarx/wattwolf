@@ -26,6 +26,14 @@ fn main() -> Result<(), WattwolfError> {
         "Connected to MQTT broker at {}:{}",
         config.mqtt.host, config.mqtt.port
     );
+
+    // Publish Home Assistant auto-discovery messages
+    mqtt_publisher.publish_discovery(&config.sensors)?;
+    println!(
+        "Published auto-discovery messages for {} sensor(s)",
+        config.sensors.len()
+    );
+
     // Create reader based on connection type
     let reader: Box<dyn Read> = match &config.connection {
         Connection::Socket(addr) => {
