@@ -4,9 +4,10 @@ use crate::config::{Config, Connection};
 use crate::error::WattwolfError;
 use serialport::{Parity, StopBits};
 use sml_rs::parser::complete::File;
+use std::collections::HashMap;
 use std::io::Read;
 use std::net::TcpStream;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 mod config;
 mod error;
@@ -56,6 +57,11 @@ fn main() -> Result<(), WattwolfError> {
 
     let mut sml_reader = sml_rs::SmlReader::from_reader(reader);
 
+    // Track last published values and timestamp
+    let mut last_published_values: HashMap<String, u64> = HashMap::new();
+    let mut last_publish_time = Instant::now();
+    let min_publish_interval = Duration::from_secs(config.mqtt.min_publish_interval);
+
     loop {
         let measurements = sml_reader
             .next::<File>()
@@ -72,17 +78,36 @@ fn main() -> Result<(), WattwolfError> {
             });
 
         match measurements {
+            Err(e) => eprintln!("Error reading measurement: {e}"),
             Ok(measurements) => {
-                // Publish each measurement to MQTT
-                for measurement in &measurements {
-                    if let Err(e) = mqtt_publisher
-                        .publish_measurement(&measurement.sensor.name, measurement.value)
-                    {
-                        eprintln!("Error publishing measurement to MQTT: {e}");
+                // Check if any value has changed…
+                let any_value_changed = measurements.iter().any(|m| {
+                    last_published_values
+                        .get(&m.sensor.name)
+                        .is_none_or(|&last_val| last_val != m.value)
+                });
+
+                // …or minimum publish interval has elapsed
+                let time_elapsed = min_publish_interval < last_publish_time.elapsed();
+
+                if any_value_changed || time_elapsed {
+                    // Publish each measurement to MQTT
+                    for measurement in &measurements {
+                        if let Err(e) = mqtt_publisher
+                            .publish_measurement(&measurement.sensor.name, measurement.value)
+                        {
+                            eprintln!("Error publishing measurement to MQTT: {e}");
+                        } else {
+                            // Update last published value
+                            last_published_values
+                                .insert(measurement.sensor.name.clone(), measurement.value);
+
+                            // Update last publish time
+                            last_publish_time = Instant::now();
+                        }
                     }
                 }
             }
-            Err(e) => eprintln!("Error reading measurement: {e}"),
         }
     }
 }

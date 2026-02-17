@@ -102,7 +102,7 @@ impl MqttPublisher {
             .publish(
                 discovery_topic,
                 QoS::AtLeastOnce,
-                true,
+                false,
                 discovery_payload.to_string(),
             )
             .map_err(WattwolfError::MqttHaDiscovery)?;
@@ -115,7 +115,7 @@ impl MqttPublisher {
         let state_topic = format!("{}/{}/state", self.topic_prefix, sensor_name);
 
         self.client
-            .publish(state_topic, QoS::AtLeastOnce, false, value.to_string())
+            .publish(state_topic, QoS::AtLeastOnce, true, value.to_string())
             .map_err(WattwolfError::MqttSensorPublish)?;
 
         Ok(())

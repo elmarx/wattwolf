@@ -26,6 +26,9 @@ pub struct MqttConfig {
     pub topic_prefix: String,
     #[serde(default = "default_availability_topic")]
     pub availability_topic: String,
+    /// Minimum interval in seconds to publish values, even if they haven't changed
+    #[serde(default = "default_min_publish_interval")]
+    pub min_publish_interval: u64,
 }
 
 impl MqttConfig {
@@ -56,6 +59,10 @@ fn default_topic_prefix() -> String {
 
 fn default_availability_topic() -> String {
     "wattwolf/availability".to_string()
+}
+
+fn default_min_publish_interval() -> u64 {
+    300
 }
 
 #[derive(Debug, Deserialize, Serialize)]
