@@ -40,6 +40,29 @@
           # module parameters provide easy access to attributes of the same
           # system.
 
+          packages.default = pkgs.rustPlatform.buildRustPackage {
+            pname = "wattwolf";
+            version = "0.1.0";
+            src = ./.;
+
+            cargoLock = {
+              lockFile = ./Cargo.lock;
+            };
+
+            nativeBuildInputs = [
+              pkgs.pkg-config
+            ];
+
+            buildInputs = [
+              pkgs.systemd
+            ];
+
+            meta = with pkgs.lib; {
+              description = "Read values from smart meter";
+              license = with licenses; [ mit asl20 ];
+            };
+          };
+
           devShells.default = pkgs.mkShell {
             buildInputs = [
               # for libudev
