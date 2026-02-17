@@ -34,6 +34,10 @@ fn main() -> Result<(), WattwolfError> {
         config.sensors.len()
     );
 
+    // Set device status to online
+    mqtt_publisher.set_online()?;
+    println!("Device status set to online");
+
     // Create reader based on connection type
     let reader: Box<dyn Read> = match &config.connection {
         Connection::Socket(addr) => {

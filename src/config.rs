@@ -24,6 +24,8 @@ pub struct MqttConfig {
     pub password: Option<String>,
     #[serde(default = "default_topic_prefix")]
     pub topic_prefix: String,
+    #[serde(default = "default_availability_topic")]
+    pub availability_topic: String,
 }
 
 impl MqttConfig {
@@ -50,6 +52,10 @@ fn default_mqtt_port() -> u16 {
 
 fn default_topic_prefix() -> String {
     "wattwolf".to_string()
+}
+
+fn default_availability_topic() -> String {
+    "wattwolf/availability".to_string()
 }
 
 #[derive(Debug, Deserialize, Serialize)]

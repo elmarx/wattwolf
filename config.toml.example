@@ -15,6 +15,7 @@ socket = "localhost:2000"
 host = "localhost" # Can be overridden with MQTT_HOST env var
 port = 1883  # Optional, defaults to 1883
 topic_prefix = "wattwolf"  # Optional, defaults to "wattwolf"
+availability_topic = "wattwolf/availability"  # Optional, defaults to wattwolf/availability, used by Home Assistant to determine if the device is online.
 # username = "your_mqtt_username"  # Optional, can be overridden with MQTT_USERNAME env var
 # password = "your_mqtt_password"  # Optional, can be overridden with MQTT_PASSWORD env var
 

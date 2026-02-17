@@ -28,6 +28,9 @@ pub enum WattwolfError {
     #[error("Failed to publish MQTT sensor measurement: {0}")]
     MqttSensorPublish(#[source] rumqttc::ClientError),
 
+    #[error("Failed to publish MQTT availability message: {0}")]
+    MqttOnlinePublish(#[source] rumqttc::ClientError),
+
     #[error(transparent)]
     Sml(#[from] MeasurementError),
 }
