@@ -86,6 +86,13 @@
         # agnostic ones like nixosModule and system-enumerating ones, although
         # those are more easily expressed in perSystem.
 
+        nixosModules.default = { config, lib, pkgs, ... }: {
+          imports = [ ./nixos-module.nix ];
+          config = lib.mkIf config.services.wattwolf.enable {
+            nixpkgs.overlays = [ inputs.self.overlays.default ];
+          };
+        };
+
         overlays.default = final: prev: {
           wattwolf = inputs.self.packages.${final.system}.default;
         };
