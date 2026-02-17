@@ -4,6 +4,7 @@ use rumqttc::{Client, Connection, LastWill, MqttOptions, QoS};
 use serde_json::json;
 use std::cell::RefCell;
 use std::time::Duration;
+use tracing::error;
 
 pub struct MqttPublisher {
     client: Client,
@@ -52,7 +53,7 @@ impl MqttPublisher {
         std::thread::spawn(move || {
             for notification in connection.iter() {
                 if let Err(e) = notification {
-                    eprintln!("MQTT connection error: {e}");
+                    error!(error = %e, "MQTT connection error");
                 }
             }
         });

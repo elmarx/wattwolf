@@ -15,3 +15,5 @@ toml = "0.8.23"
 phf = { version = "0.13.1", features = ["macros"] }
 rumqttc = "0.25.1"
 strum = { version = "0.27.2", features = ["derive"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
