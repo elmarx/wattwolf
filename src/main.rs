@@ -11,6 +11,7 @@ use std::time::Duration;
 mod config;
 mod error;
 mod model;
+mod mqtt;
 mod obis;
 
 fn main() -> Result<(), WattwolfError> {
@@ -18,6 +19,13 @@ fn main() -> Result<(), WattwolfError> {
 
     println!("Config: {config:#?}");
 
+    // Create MQTT publisher
+    let mqtt_publisher = mqtt::MqttPublisher::new(&config.mqtt);
+    mqtt_publisher.run();
+    println!(
+        "Connected to MQTT broker at {}:{}",
+        config.mqtt.host, config.mqtt.port
+    );
     // Create reader based on connection type
     let reader: Box<dyn Read> = match &config.connection {
         Connection::Socket(addr) => {
@@ -52,7 +60,16 @@ fn main() -> Result<(), WattwolfError> {
             });
 
         match measurements {
-            Ok(measurement) => println!("{measurement:#?}"),
+            Ok(measurements) => {
+                // Publish each measurement to MQTT
+                for measurement in &measurements {
+                    if let Err(e) = mqtt_publisher
+                        .publish_measurement(&measurement.sensor.name, measurement.value)
+                    {
+                        eprintln!("Error publishing measurement to MQTT: {e}");
+                    }
+                }
+            }
             Err(e) => eprintln!("Error reading measurement: {e}"),
         }
     }

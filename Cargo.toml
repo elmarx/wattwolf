@@ -12,3 +12,4 @@ sml-rs = "0.4.0"
 thiserror = "2.0.18"
 toml = "0.8.23"
 phf = { version = "0.13.1", features = ["macros"] }
+rumqttc = "0.25.1"

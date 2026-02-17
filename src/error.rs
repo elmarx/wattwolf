@@ -22,6 +22,8 @@ pub enum WattwolfError {
     #[error("Failed to parse configuration file: {0}")]
     ConfigParseError(#[source] toml::de::Error),
 
+    #[error("Failed to publish MQTT sensor measurement: {0}")]
+    MqttSensorPublish(#[source] rumqttc::ClientError),
     #[error(transparent)]
     Sml(#[from] MeasurementError),
 }

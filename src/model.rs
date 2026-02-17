@@ -3,7 +3,7 @@ use crate::error::MeasurementError;
 
 #[derive(Debug, PartialEq)]
 pub struct Measurement<'a> {
-    sensor: &'a Sensor,
+    pub sensor: &'a Sensor,
     pub value: u64,
 }
 
