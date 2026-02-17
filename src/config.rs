@@ -4,6 +4,24 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 
+/// A wrapper type for sensitive values that hides the content when formatted with Debug
+#[derive(Clone, Deserialize, Serialize, PartialEq, Eq)]
+pub struct Secret<T>(pub T);
+
+impl<T> std::fmt::Debug for Secret<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("***")
+    }
+}
+
+impl<T> std::ops::Deref for Secret<T> {
+    type Target = T;
+    
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
     #[serde(default)]
@@ -21,7 +39,7 @@ pub struct MqttConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub password: Option<String>,
+    pub password: Option<Secret<String>>,
     #[serde(default = "default_topic_prefix")]
     pub topic_prefix: String,
     #[serde(default = "default_availability_topic")]
@@ -38,7 +56,7 @@ impl MqttConfig {
             self.username = Some(username);
         }
         if let Ok(password) = std::env::var("MQTT_PASSWORD") {
-            self.password = Some(password);
+            self.password = Some(Secret(password));
         }
 
         if let Ok(host) = std::env::var("MQTT_HOST") {

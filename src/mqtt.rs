@@ -19,7 +19,7 @@ impl MqttPublisher {
         mqtt_options.set_keep_alive(Duration::from_secs(30));
 
         if let (Some(username), Some(password)) = (&config.username, &config.password) {
-            mqtt_options.set_credentials(username, password);
+            mqtt_options.set_credentials(username, password.0.as_str());
         }
 
         // Configure Last Will and Testament to set device offline when connection is lost
