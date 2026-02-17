@@ -1,6 +1,15 @@
 # Wattwolf
 
-Read smart meter data and send it (via MQTT) to home assistant.
+Read smart meter data* (Smart Message Language) via infrared port and send sensor-data (via MQTT) to Home Assistant.
+
+*To be precise: "moderne Messeinrichtung", "smart meter" typically includes a gateway.
+
+## Hardware
+
+Tested with:
+
+- Landis Gyr E320
+- Hichi IR USB reader
 
 ## Configuration
 
