@@ -1,7 +1,9 @@
 //! Reads data from a TCP socket or serial port and prints the contained sml messages to stdout
 
-use crate::config::{Config, Connection};
+use crate::cli::Args;
+use crate::config::{Config, Connection, get_config_path};
 use crate::error::WattwolfError;
+use clap::Parser;
 use serialport::{Parity, StopBits};
 use sml_rs::parser::complete::File;
 use std::collections::HashMap;
@@ -10,6 +12,7 @@ use std::net::TcpStream;
 use std::time::{Duration, Instant};
 use tracing::{debug, error, info};
 
+mod cli;
 mod config;
 mod error;
 mod model;
@@ -25,7 +28,11 @@ fn main() -> Result<(), WattwolfError> {
         )
         .init();
 
-    let config = Config::from_file("config.toml")?;
+    let args = Args::parse();
+    let config = args.config;
+    let config = get_config_path(config).ok_or(WattwolfError::ConfigNotFound)?;
+
+    let config = Config::from_file(&config)?;
 
     info!(?config, "Loaded configuration");
 

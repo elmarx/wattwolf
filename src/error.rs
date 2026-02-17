@@ -33,6 +33,9 @@ pub enum WattwolfError {
 
     #[error(transparent)]
     Sml(#[from] MeasurementError),
+
+    #[error("Config nof found")]
+    ConfigNotFound,
 }
 
 #[derive(Error, Debug)]

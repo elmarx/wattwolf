@@ -2,7 +2,7 @@ use crate::error::WattwolfError;
 use crate::obis::ObisKeyFigure;
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// A wrapper type for sensitive values that hides the content when formatted with Debug
 #[derive(Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -16,7 +16,7 @@ impl<T> std::fmt::Debug for Secret<T> {
 
 impl<T> std::ops::Deref for Secret<T> {
     type Target = T;
-    
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -126,4 +126,17 @@ impl Config {
 
         Ok(config)
     }
+}
+
+pub fn get_config_path(config_from_cli: Option<PathBuf>) -> Option<PathBuf> {
+    config_from_cli
+        .or_else(|| std::env::var("WATTWOLF_CONFIG").map(PathBuf::from).ok())
+        .or_else(|| {
+            let config_in_cwd = PathBuf::from("config.toml");
+            config_in_cwd.exists().then_some(config_in_cwd)
+        })
+        .or_else(|| {
+            let config_in_etc = PathBuf::from("/etc/wattwolf.toml");
+            config_in_etc.exists().then_some(config_in_etc)
+        })
 }

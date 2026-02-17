@@ -4,7 +4,14 @@ Read smart meter data and send it (via MQTT) to home assistant.
 
 ## Configuration
 
-Create a `config.toml` based on `config.toml.example`.
+Create a config file (e.g. `config.toml`) based on `config.toml.example`.
+
+Wattwolf looks in the following order for config files:
+
+- CLI argument `--config`
+- Environment variable `WATTWOLF_CONFIG`
+- Current working directory: `config.toml`
+- global `/etc/wattwolf.toml`
 
 ### Connection
 
