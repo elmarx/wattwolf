@@ -6,6 +6,31 @@ use std::cell::RefCell;
 use std::time::Duration;
 use tracing::error;
 
+fn handle_connection(mut connection: Connection) {
+    const INITIAL_BACKOFF: Duration = Duration::from_millis(100);
+    const MAX_BACKOFF: Duration = Duration::from_secs(60);
+    const BACKOFF_MULTIPLIER: u32 = 2;
+
+    let mut current_backoff = INITIAL_BACKOFF;
+
+    for notification in connection.iter() {
+        if let Err(e) = notification {
+            error!(error = %e, backoff_ms = current_backoff.as_millis(), "MQTT connection error, backing off");
+
+            std::thread::sleep(current_backoff);
+
+            // Exponentially increase backoff, capped at MAX_BACKOFF
+            current_backoff = std::cmp::min(
+                current_backoff.saturating_mul(BACKOFF_MULTIPLIER),
+                MAX_BACKOFF,
+            );
+        } else {
+            // Reset backoff on successful notification
+            current_backoff = INITIAL_BACKOFF;
+        }
+    }
+}
+
 pub struct MqttPublisher {
     client: Client,
     topic_prefix: String,
@@ -43,7 +68,7 @@ impl MqttPublisher {
 
     /// poll the eventloop. Only call this method once
     pub fn run(&self) {
-        let mut connection = self
+        let connection = self
             .connection
             .borrow_mut()
             .take()
@@ -51,11 +76,7 @@ impl MqttPublisher {
 
         // Spawn a thread to handle the connection
         std::thread::spawn(move || {
-            for notification in connection.iter() {
-                if let Err(e) = notification {
-                    error!(error = %e, "MQTT connection error");
-                }
-            }
+            handle_connection(connection);
         });
     }
 
