@@ -9,6 +9,7 @@ use sml_rs::parser::complete::File;
 use std::collections::HashMap;
 use std::io::Read;
 use std::net::TcpStream;
+use std::thread::sleep;
 use std::time::{Duration, Instant};
 use tracing::{debug, error, info};
 
@@ -81,6 +82,8 @@ fn main() -> Result<(), WattwolfError> {
     let mut last_publish_time = Instant::now();
     let min_publish_interval = Duration::from_secs(config.mqtt.min_publish_interval);
 
+    let mut err_count = 0;
+
     loop {
         let measurements = sml_reader
             .next::<File>()
@@ -97,8 +100,18 @@ fn main() -> Result<(), WattwolfError> {
             });
 
         match measurements {
-            Err(e) => error!(error = %e, "Error reading measurement"),
+            Err(e) if 6 < err_count => {
+                error!(error = %e, "Error reading measurement 6 consecutive times, crashing");
+                // crash, let systemd restart
+                return Err(e);
+            }
+            Err(e) => {
+                error!(error = %e, "Error reading measurement");
+                err_count += 1;
+                sleep(Duration::from_secs(2 << err_count));
+            }
             Ok(measurements) => {
+                err_count = 0;
                 // Check if any value has changed…
                 let any_value_changed = measurements.iter().any(|m| {
                     last_published_values
