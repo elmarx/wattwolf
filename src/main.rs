@@ -111,7 +111,10 @@ fn main() -> Result<(), WattwolfError> {
                 sleep(Duration::from_secs(2 << err_count));
             }
             Ok(measurements) => {
-                err_count = 0;
+                if 0 < err_count {
+                    tracing::info!("Recovered from {err_count} failed measurements");
+                    err_count = 0;
+                }
                 // Check if any value has changed…
                 let any_value_changed = measurements.iter().any(|m| {
                     last_published_values
