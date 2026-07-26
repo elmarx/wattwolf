@@ -57,59 +57,36 @@ in
       example = "/run/agenix/wattwolf-mqtt-password";
     };
 
-    user = mkOption {
-      type = types.str;
-      default = "wattwolf";
-      description = "User account under which wattwolf runs.";
-    };
-
-    group = mkOption {
-      type = types.str;
-      default = "wattwolf";
-      description = "Group under which wattwolf runs.";
-    };
-
     extraGroups = mkOption {
       type = types.listOf types.str;
       default = [ "dialout" ];
       description = ''
-        Additional groups for the wattwolf user.
+        Additional groups for the dynamically created wattwolf service user.
         By default includes 'dialout' for serial port access.
       '';
     };
   };
 
   config = mkIf cfg.enable {
-    users.users.${cfg.user} = {
-      isSystemUser = true;
-      group = cfg.group;
-      extraGroups = cfg.extraGroups;
-      description = "wattwolf smart meter reader service user";
-    };
-
-    users.groups.${cfg.group} = { };
-
     systemd.services.wattwolf = {
       description = "Wattwolf Smart Meter Reader";
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
 
       serviceConfig = {
-        Type = "simple";
-        User = cfg.user;
-        Group = cfg.group;
         Restart = "on-failure";
         RestartSec = "10s";
         ExecStart = "${cfg.package}/bin/wattwolf";
 
         LoadCredential = mkIf (cfg.mqttPasswordFile != null) "mqtt-password:${cfg.mqttPasswordFile}";
 
+        # Run as an ephemeral, systemd-managed user/group instead of a static one;
+        # DynamicUser also implies NoNewPrivileges, ProtectSystem=strict,
+        # ProtectHome=read-only, PrivateTmp and RemoveIPC.
+        DynamicUser = true;
+        SupplementaryGroups = cfg.extraGroups;
+
         # Security hardening
-        NoNewPrivileges = true;
-        PrivateTmp = true;
-        ProtectSystem = "strict";
-        ProtectHome = true;
-        ReadWritePaths = [ ];
         ProtectKernelTunables = true;
         ProtectKernelModules = true;
         ProtectControlGroups = true;
@@ -118,8 +95,6 @@ in
         LockPersonality = true;
         RestrictRealtime = true;
         RestrictSUIDSGID = true;
-        RemoveIPC = true;
-        PrivateMounts = true;
         SystemCallArchitectures = "native";
         UMask = "0077";
 
