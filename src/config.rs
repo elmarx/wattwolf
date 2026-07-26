@@ -24,8 +24,6 @@ impl<T> std::ops::Deref for Secret<T> {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
-    #[serde(default)]
-    pub debug: bool,
     pub connection: Connection,
     pub mqtt: MqttConfig,
     pub sensors: Vec<Sensor>,

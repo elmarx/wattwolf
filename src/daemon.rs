@@ -50,10 +50,6 @@ pub fn run(config: &Config, reader: Box<dyn Read>) -> Result<(), WattwolfError> 
             .and_then(|res| -> Result<_, WattwolfError> {
                 let file = res.map_err(WattwolfError::ReadError)?;
 
-                if config.debug {
-                    debug!(?file, "Raw SML file");
-                }
-
                 let measurements = model::read_measurement(&file, config.sensors.as_slice())?;
                 Ok(measurements)
             });
