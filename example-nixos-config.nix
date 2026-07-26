@@ -27,31 +27,30 @@
           # Example 1: Basic configuration with serial device
           services.wattwolf = {
             enable = true;
-            config = ''
-              [connection]
-              device = "/dev/ttyUSB0"
+            connection.device = "/dev/ttyUSB0";
 
-              [mqtt]
-              host = "localhost"
-              port = 1883
-              topic_prefix = "wattwolf"
-              username = "wattwolf"
-              password = "changeme"  # Better: use mqttPasswordFile instead!
+            mqtt = {
+              host = "localhost";
+              username = "wattwolf";
+              # Better: use mqttPasswordFile instead of an inline password!
+            };
 
-              [[sensors]]
-              name = "consumed"
-              friendly_name = "Energy Consumed"
-              obis = "1-0:1.8.0*255"
-              device_class = "energy"
-              state_class = "total_increasing"
-
-              [[sensors]]
-              name = "produced"
-              friendly_name = "Energy Produced"
-              obis = "1-0:2.8.0*255"
-              device_class = "energy"
-              state_class = "total_increasing"
-            '';
+            sensors = [
+              {
+                name = "consumed";
+                friendlyName = "Energy Consumed";
+                obis = "1-0:1.8.0*255";
+                deviceClass = "energy";
+                stateClass = "total_increasing";
+              }
+              {
+                name = "produced";
+                friendlyName = "Energy Produced";
+                obis = "1-0:2.8.0*255";
+                deviceClass = "energy";
+                stateClass = "total_increasing";
+              }
+            ];
           };
         })
 
@@ -61,38 +60,36 @@
         #   services.wattwolf = {
         #     enable = true;
         #     mqttPasswordFile = "/run/agenix/wattwolf-mqtt-password";
-        #     config = ''
-        #       [connection]
-        #       socket = "smart-meter-gateway:2000"
+        #     connection.socket = "smart-meter-gateway:2000";
         #
-        #       [mqtt]
-        #       host = "mqtt.example.com"
-        #       port = 1883
-        #       topic_prefix = "home/energy"
-        #       username = "wattwolf"
+        #     mqtt = {
+        #       host = "mqtt.example.com";
+        #       username = "wattwolf";
+        #       topicPrefix = "home/energy";
         #       # password will be read from mqttPasswordFile
+        #     };
         #
-        #       [[sensors]]
-        #       name = "consumed"
-        #       friendly_name = "Energy Consumed"
-        #       obis = "1-0:1.8.0*255"
-        #       device_class = "energy"
-        #       state_class = "total_increasing"
-        #
-        #       [[sensors]]
-        #       name = "produced"
-        #       friendly_name = "Energy Produced"
-        #       obis = "1-0:2.8.0*255"
-        #       device_class = "energy"
-        #       state_class = "total_increasing"
-        #     '';
+        #     sensors = [
+        #       {
+        #         name = "consumed";
+        #         friendlyName = "Energy Consumed";
+        #         obis = "1-0:1.8.0*255";
+        #         deviceClass = "energy";
+        #         stateClass = "total_increasing";
+        #       }
+        #       {
+        #         name = "produced";
+        #         friendlyName = "Energy Produced";
+        #         obis = "1-0:2.8.0*255";
+        #         deviceClass = "energy";
+        #         stateClass = "total_increasing";
+        #       }
+        #     ];
         #   };
         #
         #   # agenix secret configuration
         #   age.secrets.wattwolf-mqtt-password = {
         #     file = ./secrets/wattwolf-mqtt-password.age;
-        #     owner = config.services.wattwolf.user;
-        #     group = config.services.wattwolf.group;
         #   };
         # })
       ];

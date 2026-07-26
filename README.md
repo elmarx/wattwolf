@@ -100,12 +100,23 @@ Quick example:
           services.wattwolf = {
             enable = true;
             mqttPasswordFile = config.age.secrets.wattwolf.path;
-            config = ''
-              [connection]
-              device = "/dev/ttyUSB0"
-              
-              # …
-            '';
+
+            connection.device = "/dev/ttyUSB0";
+
+            mqtt = {
+              host = "localhost";
+              username = "wattwolf";
+            };
+
+            sensors = [
+              {
+                name = "consumed";
+                friendlyName = "Energy Consumed";
+                obis = "1.8.0";
+                deviceClass = "energy";
+                stateClass = "total_increasing";
+              }
+            ];
           };
         })
       ];

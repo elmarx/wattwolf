@@ -4,6 +4,46 @@ with lib;
 
 let
   cfg = config.services.wattwolf;
+
+  tomlFormat = pkgs.formats.toml { };
+
+  # drop null attributes, since TOML has no concept of null
+  filterNulls = filterAttrs (_: v: v != null);
+
+  connectionSettings =
+    if cfg.connection.device != null then
+      { device = cfg.connection.device; }
+    else
+      { socket = cfg.connection.socket; };
+
+  mqttSettings = filterNulls {
+    host = cfg.mqtt.host;
+    port = cfg.mqtt.port;
+    username = cfg.mqtt.username;
+    topic_prefix = cfg.mqtt.topicPrefix;
+    availability_topic = cfg.mqtt.availabilityTopic;
+    min_publish_interval = cfg.mqtt.minPublishInterval;
+    max_publish_interval = cfg.mqtt.maxPublishInterval;
+  };
+
+  sensorSettings = map (
+    sensor:
+    filterNulls {
+      name = sensor.name;
+      friendly_name = sensor.friendlyName;
+      obis = sensor.obis;
+      device_class = sensor.deviceClass;
+      state_class = sensor.stateClass;
+    }
+  ) cfg.sensors;
+
+  settings = {
+    connection = connectionSettings;
+    mqtt = mqttSettings;
+    sensors = sensorSettings;
+  };
+
+  configFile = tomlFormat.generate "wattwolf-config.toml" settings;
 in
 {
   options.services.wattwolf = {
@@ -16,30 +56,119 @@ in
       description = "The wattwolf package to use.";
     };
 
-    config = mkOption {
-      type = types.str;
+    connection = mkOption {
       description = ''
-        Configuration for wattwolf in TOML format.
-        This will be written to a file and passed to wattwolf via WATTWOLF_CONFIG environment variable.
+        How to connect to the smart meter: either a serial `device` or a
+        `socket` (e.g. a ser2net TCP proxy). Exactly one of the two must be
+        set.
       '';
-      example = literalExpression ''
-        '''
-          [connection]
-          socket = "localhost:2000"
+      default = { };
+      type = types.submodule {
+        options = {
+          device = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            example = "/dev/ttyUSB0";
+            description = "Path to the serial device the smart meter is connected to.";
+          };
 
-          [mqtt]
-          host = "localhost"
-          port = 1883
-          topic_prefix = "wattwolf"
+          socket = mkOption {
+            type = types.nullOr types.str;
+            default = "localhost:2000";
+            example = "smart-meter-gateway:2000";
+            description = "host:port of a TCP endpoint (e.g. ser2net) to connect to.";
+          };
+        };
+      };
+    };
 
-          [[sensors]]
-          name = "consumed"
-          friendly_name = "Energy Consumed"
-          obis = "1.8.0"
-          device_class = "energy"
-          state_class = "total_increasing"
-        '''
-      '';
+    mqtt = mkOption {
+      description = "MQTT broker connection settings.";
+      type = types.submodule {
+        options = {
+          host = mkOption {
+            type = types.str;
+            description = "MQTT broker host name or IP address.";
+          };
+
+          port = mkOption {
+            type = types.port;
+            default = 1883;
+            description = "MQTT broker port.";
+          };
+
+          username = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            description = "MQTT username.";
+          };
+
+          topicPrefix = mkOption {
+            type = types.str;
+            default = "wattwolf";
+            description = "Prefix for published MQTT topics.";
+          };
+
+          availabilityTopic = mkOption {
+            type = types.str;
+            default = "wattwolf/availability";
+            description = "MQTT topic used to publish availability (online/offline).";
+          };
+
+          minPublishInterval = mkOption {
+            type = types.ints.unsigned;
+            default = 10;
+            description = "Minimum interval in seconds between published values, i.e. do not send updates more often than this.";
+          };
+
+          maxPublishInterval = mkOption {
+            type = types.ints.unsigned;
+            default = 300;
+            description = "Maximum interval in seconds between published values, i.e. publish at least this often.";
+          };
+        };
+      };
+    };
+
+    sensors = mkOption {
+      description = "Sensors to read from the smart meter and publish via MQTT (Home Assistant discovery format).";
+      default = [ ];
+      type = types.listOf (
+        types.submodule {
+          options = {
+            name = mkOption {
+              type = types.str;
+              example = "consumed";
+              description = "Internal sensor name.";
+            };
+
+            friendlyName = mkOption {
+              type = types.str;
+              example = "Energy Consumed";
+              description = "Human-readable sensor name.";
+            };
+
+            obis = mkOption {
+              type = types.str;
+              example = "1.8.0";
+              description = "OBIS code identifying the value to read from the smart meter.";
+            };
+
+            deviceClass = mkOption {
+              type = types.nullOr (types.enum [ "power" "energy" ]);
+              default = null;
+              description = "Home Assistant device class for this sensor.";
+            };
+
+            stateClass = mkOption {
+              type = types.nullOr types.str;
+              default = null;
+              example = "total_increasing";
+              description = "Home Assistant state class for this sensor.";
+            };
+          };
+        }
+      );
     };
 
     mqttPasswordFile = mkOption {
@@ -68,6 +197,13 @@ in
   };
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = (cfg.connection.device == null) != (cfg.connection.socket == null);
+        message = "services.wattwolf.connection: exactly one of `device` or `socket` must be set.";
+      }
+    ];
+
     systemd.services.wattwolf = {
       description = "Wattwolf Smart Meter Reader";
       wantedBy = [ "multi-user.target" ];
@@ -104,7 +240,7 @@ in
       };
 
       environment = {
-        WATTWOLF_CONFIG = toString (pkgs.writeText "config.toml" cfg.config);
+        WATTWOLF_CONFIG = toString configFile;
         MQTT_PASSWORD_FILE = mkIf (cfg.mqttPasswordFile != null) "%d/mqtt-password";
       };
     };
