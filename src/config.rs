@@ -60,6 +60,13 @@ impl MqttConfig {
         }
         if let Ok(password) = std::env::var("MQTT_PASSWORD") {
             self.password = Some(Secret(password));
+        } else if let Ok(password_file) = std::env::var("MQTT_PASSWORD_FILE") {
+            // supports e.g. systemd's LoadCredential=/Environment=..%d/.. mechanism,
+            // where the secret is provided as a file instead of directly as an
+            // environment variable
+            if let Ok(password) = fs::read_to_string(password_file) {
+                self.password = Some(Secret(password.trim_end().to_string()));
+            }
         }
 
         if let Ok(host) = std::env::var("MQTT_HOST") {

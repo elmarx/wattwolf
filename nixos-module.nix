@@ -47,7 +47,11 @@ in
       default = null;
       description = ''
         Path to a file containing the MQTT password.
-        The password will be read from this file and passed via MQTT_PASSWORD environment variable.
+        It is loaded via systemd's LoadCredential= mechanism and passed to
+        wattwolf as a file path (MQTT_PASSWORD_FILE), per the credentials
+        recommendation in systemd.exec(5): secrets are kept out of the
+        service's environment and are only exposed as a file readable by the
+        service itself.
         This is useful for integration with agenix or other secret management tools.
       '';
       example = "/run/agenix/wattwolf-mqtt-password";
@@ -96,6 +100,9 @@ in
         Group = cfg.group;
         Restart = "on-failure";
         RestartSec = "10s";
+        ExecStart = "${cfg.package}/bin/wattwolf";
+
+        LoadCredential = mkIf (cfg.mqttPasswordFile != null) "mqtt-password:${cfg.mqttPasswordFile}";
 
         # Security hardening
         NoNewPrivileges = true;
@@ -123,14 +130,8 @@ in
 
       environment = {
         WATTWOLF_CONFIG = toString (pkgs.writeText "config.toml" cfg.config);
+        MQTT_PASSWORD_FILE = mkIf (cfg.mqttPasswordFile != null) "%d/mqtt-password";
       };
-
-      script = ''
-        ${optionalString (cfg.mqttPasswordFile != null) ''
-          export MQTT_PASSWORD="$(cat ${escapeShellArg cfg.mqttPasswordFile})"
-        ''}
-        exec ${cfg.package}/bin/wattwolf
-      '';
     };
   };
 }

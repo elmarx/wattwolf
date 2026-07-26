@@ -47,6 +47,8 @@ Setup the MQTT connection to publish [discovery messages](https://www.home-assis
 export MQTT_USERNAME=your_username
 export MQTT_PASSWORD=your_password
 export MQTT_HOST=your_host
+# or use MQTT_PASSWORD_FILE for increased security, e.g. usage with systemd's `LoadCredential=`
+export MQTT_PASSWORD_FILE=/run/secrets/mqtt-password
 ```
 
 Run a development MQTT server with:
