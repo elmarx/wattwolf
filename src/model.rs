@@ -40,13 +40,21 @@ pub fn read_measurement<'a>(
             ));
         }
 
-        match &entry.value {
-            sml_rs::parser::common::Value::U64(val) => measurements.push(Measurement {
-                sensor,
-                value: *val,
-            }),
-            _ => return Err(MeasurementError::UnexpectedValueType(sensor.obis.exact)),
-        }
+        let value = match &entry.value {
+            sml_rs::parser::common::Value::U64(val) => Ok(val),
+            _ => Err(MeasurementError::UnexpectedValueType(sensor.obis.exact)),
+        }?;
+        let scaler = entry.scaler.unwrap_or(0);
+
+        // apply scaler to value: actual = raw_value * 10 ^ scaler
+        // cut off fractional values
+        let value = if scaler >= 0 {
+            value * 10u64.pow(u32::from(scaler.unsigned_abs()))
+        } else {
+            value / 10u64.pow(u32::from(scaler.unsigned_abs()))
+        };
+
+        measurements.push(Measurement { sensor, value });
     }
 
     Ok(measurements)
@@ -166,11 +174,11 @@ mod test {
         let expected = vec![
             Measurement {
                 sensor: &sample_sensors[0],
-                value: 23152,
+                value: 23_152_000u64,
             },
             Measurement {
                 sensor: &sample_sensors[1],
-                value: 8564,
+                value: 8_564_000u64,
             },
         ];
 
