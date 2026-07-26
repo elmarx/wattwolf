@@ -8,7 +8,7 @@ use tracing::error;
 
 fn handle_connection(mut connection: Connection) {
     const INITIAL_BACKOFF: Duration = Duration::from_millis(100);
-    const MAX_BACKOFF: Duration = Duration::from_secs(60);
+    const MAX_BACKOFF: Duration = Duration::from_mins(1);
     const BACKOFF_MULTIPLIER: u32 = 2;
 
     let mut current_backoff = INITIAL_BACKOFF;

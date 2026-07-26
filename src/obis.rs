@@ -17,7 +17,7 @@ pub struct ObisKeyFigure {
     pub exact: OctetStr<'static>,
     pub simplified: &'static str,
     pub unit: Unit,
-    /// expected DLMS/COSEM unit according to IEC 62056-6-2 https://www.nema.org/docs/default-source/standards-document-library/c12-iec62056-6-2-ed3-contents-and-scope.pdf?sfvrsn=8cf9aa7e_0
+    /// expected DLMS/COSEM unit according to IEC 62056-6-2 <https://www.nema.org/docs/default-source/standards-document-library/c12-iec62056-6-2-ed3-contents-and-scope.pdf?sfvrsn=8cf9aa7e_0>
     pub unit_id: u8,
 }
 

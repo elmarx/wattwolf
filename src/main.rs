@@ -49,7 +49,7 @@ fn main() -> Result<(), WattwolfError> {
             let port = serialport::new(device, 9_600)
                 .stop_bits(StopBits::One)
                 .parity(Parity::None)
-                .timeout(Duration::from_millis(5000))
+                .timeout(Duration::from_secs(5))
                 .open()
                 .map_err(WattwolfError::SerialPortError)?;
             Box::new(port)
@@ -58,6 +58,6 @@ fn main() -> Result<(), WattwolfError> {
 
     match args.command {
         Some(Commands::Debug) => debug::run(reader),
-        None => daemon::run(config, reader),
+        None => daemon::run(&config, reader),
     }
 }

@@ -12,7 +12,7 @@ use std::thread::sleep;
 use std::time::{Duration, Instant};
 use tracing::{debug, error, info};
 
-pub fn run(config: Config, reader: Box<dyn Read>) -> Result<(), WattwolfError> {
+pub fn run(config: &Config, reader: Box<dyn Read>) -> Result<(), WattwolfError> {
     // Create MQTT publisher
     let mqtt_publisher = mqtt::MqttPublisher::new(&config.mqtt);
     mqtt_publisher.run();

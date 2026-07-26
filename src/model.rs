@@ -61,6 +61,7 @@ mod test {
     use sml_rs::parser::common::{CloseResponse, ListEntry, OpenResponse, Value};
     use sml_rs::parser::complete::{File, GetListResponse, Message, MessageBody};
 
+    #[allow(clippy::too_many_lines)]
     #[test]
     fn test() {
         // see https://de.wikipedia.org/wiki/OBIS-Kennzahlen#Elektrische_Energie
@@ -75,7 +76,7 @@ mod test {
                         client_id: Some(&[255, 255, 255, 255, 255, 255]),
                         req_file_id: &[1, 90, 205, 43],
                         server_id: &[10, 1, 76, 71, 90, 0, 3, 153, 70, 27],
-                        ref_time: Some(SecIndex(77179560)),
+                        ref_time: Some(SecIndex(77_179_560)),
                         sml_version: None,
                     }),
                 },
@@ -87,7 +88,7 @@ mod test {
                         client_id: Some(&[255, 255, 255, 255, 255, 255]),
                         server_id: &[10, 1, 76, 71, 90, 0, 3, 153, 70, 27],
                         list_name: Some(&[1, 0, 98, 10, 255, 255]),
-                        act_sensor_time: Some(SecIndex(77179560)),
+                        act_sensor_time: Some(SecIndex(77_179_560)),
                         val_list: vec![
                             ListEntry {
                                 // 1-0:96.50.1
@@ -112,8 +113,8 @@ mod test {
                             ListEntry {
                                 // 1-0:1.8.0
                                 obj_name: &[1, 0, 1, 8, 0, 255],
-                                status: Some(Status32(1878276u32)),
-                                val_time: Some(SecIndex(77179560)),
+                                status: Some(Status32(1_878_276_u32)),
+                                val_time: Some(SecIndex(77_179_560)),
                                 unit: Some(30),
                                 scaler: Some(3),
                                 value: Value::U64(23152u64),
@@ -123,7 +124,7 @@ mod test {
                                 // 1-2:2.8.0
                                 obj_name: &[1, 0, 2, 8, 0, 255],
                                 status: None,
-                                val_time: Some(SecIndex(77179560)),
+                                val_time: Some(SecIndex(77_179_560)),
                                 unit: Some(30),
                                 scaler: Some(3),
                                 value: Value::U64(8564u64),
