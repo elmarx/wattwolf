@@ -44,9 +44,12 @@ pub struct MqttConfig {
     pub topic_prefix: String,
     #[serde(default = "default_availability_topic")]
     pub availability_topic: String,
-    /// Minimum interval in seconds to publish values, even if they haven't changed
+    /// Minimum interval in seconds to publish values, i.e.: do not send intervals more often than this value
     #[serde(default = "default_min_publish_interval")]
     pub min_publish_interval: u64,
+    /// Maximum interval in seconds to publish values, i.e.: publish values at least every max_publish_interval seconds
+    #[serde(default = "default_max_publish_interval")]
+    pub max_publish_interval: u64,
 }
 
 impl MqttConfig {
@@ -80,6 +83,10 @@ fn default_availability_topic() -> String {
 }
 
 fn default_min_publish_interval() -> u64 {
+    10
+}
+
+fn default_max_publish_interval() -> u64 {
     300
 }
 

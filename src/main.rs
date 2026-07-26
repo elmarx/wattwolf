@@ -81,6 +81,7 @@ fn main() -> Result<(), WattwolfError> {
     let mut last_published_values: HashMap<String, u64> = HashMap::new();
     let mut last_publish_time = Instant::now();
     let min_publish_interval = Duration::from_secs(config.mqtt.min_publish_interval);
+    let max_publish_interval = Duration::from_secs(config.mqtt.max_publish_interval);
 
     let mut err_count = 0;
 
@@ -122,10 +123,13 @@ fn main() -> Result<(), WattwolfError> {
                         .is_none_or(|&last_val| last_val != m.value)
                 });
 
-                // …or minimum publish interval has elapsed
-                let time_elapsed = min_publish_interval < last_publish_time.elapsed();
+                // …or maximum publish interval has elapsed
+                let max_interval_elapsed = max_publish_interval < last_publish_time.elapsed();
 
-                if any_value_changed || time_elapsed {
+                // don't publish more often than min_publish_interval
+                let min_interval_elapsed = min_publish_interval <= last_publish_time.elapsed();
+
+                if (any_value_changed && min_interval_elapsed) || max_interval_elapsed {
                     // Publish each measurement to MQTT
                     for measurement in &measurements {
                         if let Err(e) = mqtt_publisher
