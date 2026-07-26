@@ -44,6 +44,9 @@ pub enum MeasurementError {
     ListResponseNotFound,
     #[error("got a ListEntry with an unexpected value type for OBIS-type `{0:?}`")]
     UnexpectedValueType(OctetStr<'static>),
+    /// for obis sensors there should be a fixed value id. Precision should be set via scaler.
+    #[error("got unit id {0:?}, expected {1}")]
+    UnexpectedUnitId(Option<u8>, u8),
     #[error("required value for OBIS-type `{0:?}` not found")]
     MissingValue(OctetStr<'static>),
 }

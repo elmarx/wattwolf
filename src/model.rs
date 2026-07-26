@@ -33,6 +33,13 @@ pub fn read_measurement<'a>(
             .find(|entry| entry.obj_name == sensor.obis.exact)
             .ok_or(MeasurementError::MissingValue(sensor.obis.exact))?;
 
+        if entry.unit != Some(sensor.obis.unit_id) {
+            return Err(MeasurementError::UnexpectedUnitId(
+                entry.unit,
+                sensor.obis.unit_id,
+            ));
+        }
+
         match &entry.value {
             sml_rs::parser::common::Value::U64(val) => measurements.push(Measurement {
                 sensor,
