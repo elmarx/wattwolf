@@ -4,9 +4,9 @@ use rumqttc::{Client, Connection, LastWill, MqttOptions, QoS};
 use serde_json::json;
 use std::cell::RefCell;
 use std::time::Duration;
-use tracing::error;
+use tracing::{error, info};
 
-fn handle_connection(mut connection: Connection) {
+fn handle_connection(mut connection: Connection, client: &Client, availability_topic: &str) {
     const INITIAL_BACKOFF: Duration = Duration::from_millis(100);
     const MAX_BACKOFF: Duration = Duration::from_mins(1);
     const BACKOFF_MULTIPLIER: u32 = 2;
@@ -14,26 +14,52 @@ fn handle_connection(mut connection: Connection) {
     let mut current_backoff = INITIAL_BACKOFF;
 
     for notification in connection.iter() {
-        if let Err(e) = notification {
-            error!(error = %e, backoff_ms = current_backoff.as_millis(), "MQTT connection error, backing off");
+        match notification {
+            Err(e) => {
+                error!(error = %e, backoff_ms = current_backoff.as_millis(), "MQTT connection error, backing off");
 
-            std::thread::sleep(current_backoff);
+                std::thread::sleep(current_backoff);
 
-            // Exponentially increase backoff, capped at MAX_BACKOFF
-            current_backoff = std::cmp::min(
-                current_backoff.saturating_mul(BACKOFF_MULTIPLIER),
-                MAX_BACKOFF,
-            );
-        } else {
-            // Reset backoff on successful notification
-            current_backoff = INITIAL_BACKOFF;
+                // Exponentially increase backoff, capped at MAX_BACKOFF
+                current_backoff = std::cmp::min(
+                    current_backoff.saturating_mul(BACKOFF_MULTIPLIER),
+                    MAX_BACKOFF,
+                );
+            }
+            Ok(rumqttc::Event::Incoming(rumqttc::Incoming::ConnAck(_)))
+                if INITIAL_BACKOFF < current_backoff =>
+            {
+                // Reset backoff on successful notification
+                current_backoff = INITIAL_BACKOFF;
+
+                publish_online(client, availability_topic);
+            }
+            // this should be the initial "connection up"
+            Ok(rumqttc::Event::Incoming(rumqttc::Incoming::ConnAck(_))) => {
+                publish_online(client, availability_topic);
+            }
+            Ok(_) => {}
         }
+    }
+}
+
+/// Publish "online" to the availability topic using a raw client handle.
+fn publish_online(client: &Client, availability_topic: &str) {
+    if let Err(e) = client
+        .publish(availability_topic, QoS::AtLeastOnce, true, "online")
+        .map_err(WattwolfError::MqttOnlinePublish)
+    {
+        // if the connection is dead there is not much we can/have to do, so just log.
+        error!(error = %e, "Publishing \"online\" state failed");
+    } else {
+        info!("Device status set to online");
     }
 }
 
 pub struct MqttPublisher {
     client: Client,
     topic_prefix: String,
+    // this RefCell construct is required to separate "new" and "run", since rumqttc "new" returns a connection.
     connection: RefCell<Option<Connection>>,
     availability_topic: String,
 }
@@ -74,9 +100,14 @@ impl MqttPublisher {
             .take()
             .expect("expected connection");
 
+        // Clone the cheap, thread-safe client handle and topic instead of
+        // sharing `&self` (which holds a `RefCell` and isn't `Sync`).
+        let client = self.client.clone();
+        let availability_topic = self.availability_topic.clone();
+
         // Spawn a thread to handle the connection
         std::thread::spawn(move || {
-            handle_connection(connection);
+            handle_connection(connection, &client, &availability_topic);
         });
     }
 
@@ -139,15 +170,6 @@ impl MqttPublisher {
         self.client
             .publish(state_topic, QoS::AtLeastOnce, true, value.to_string())
             .map_err(WattwolfError::MqttSensorPublish)?;
-
-        Ok(())
-    }
-
-    /// Publish online status to the availability topic
-    pub fn set_online(&self) -> Result<(), WattwolfError> {
-        self.client
-            .publish(&self.availability_topic, QoS::AtLeastOnce, true, "online")
-            .map_err(WattwolfError::MqttOnlinePublish)?;
 
         Ok(())
     }

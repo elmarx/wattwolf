@@ -29,10 +29,6 @@ pub fn run(config: &Config, reader: Box<dyn Read>) -> Result<(), WattwolfError> 
         "Published auto-discovery messages"
     );
 
-    // Set device status to online
-    mqtt_publisher.set_online()?;
-    info!("Device status set to online");
-
     let mut sml_reader = sml_rs::SmlReader::from_reader(reader);
 
     // Track last published values and timestamp
