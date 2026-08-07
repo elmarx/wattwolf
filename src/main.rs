@@ -20,6 +20,7 @@ mod error;
 mod model;
 mod mqtt;
 mod obis;
+mod wire;
 
 fn main() -> Result<(), WattwolfError> {
     // Initialize tracing subscriber

@@ -3,8 +3,8 @@
 
 use crate::config::Config;
 use crate::error::WattwolfError;
-use crate::model;
-use crate::mqtt;
+use crate::wire::wire;
+use crate::{model, mqtt};
 use sml_rs::parser::complete::File;
 use std::collections::HashMap;
 use std::io::Read;
@@ -13,20 +13,14 @@ use std::time::{Duration, Instant};
 use tracing::{debug, error, info};
 
 pub fn run(config: &Config, reader: Box<dyn Read>) -> Result<(), WattwolfError> {
-    // Create MQTT publisher
-    let mqtt_publisher = mqtt::MqttPublisher::new(&config.mqtt);
-    mqtt_publisher.run();
+    let (mqtt_publisher, handler, connection) = wire(config);
+
+    mqtt::eventloop::spawn(connection, handler);
+
     info!(
         host = %config.mqtt.host,
         port = config.mqtt.port,
         "Connected to MQTT broker"
-    );
-
-    // Publish Home Assistant auto-discovery messages
-    mqtt_publisher.publish_discovery(&config.sensors)?;
-    info!(
-        sensor_count = config.sensors.len(),
-        "Published auto-discovery messages"
     );
 
     let mut sml_reader = sml_rs::SmlReader::from_reader(reader);

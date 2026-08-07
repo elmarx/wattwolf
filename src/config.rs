@@ -48,6 +48,10 @@ pub struct MqttConfig {
     /// Maximum interval in seconds to publish values, i.e.: publish values at least every `max_publish_interval` seconds
     #[serde(default = "default_max_publish_interval")]
     pub max_publish_interval: u64,
+
+    /// homeassistant topic, used for discorvey and status, defaults to homeassistant
+    #[serde(default = "default_homeassistant_topic")]
+    pub homeassistant_topic: String,
 }
 
 impl MqttConfig {
@@ -85,6 +89,10 @@ fn default_topic_prefix() -> String {
 
 fn default_availability_topic() -> String {
     "wattwolf/availability".to_string()
+}
+
+fn default_homeassistant_topic() -> String {
+    "homeassistant".to_string()
 }
 
 fn default_min_publish_interval() -> u64 {
