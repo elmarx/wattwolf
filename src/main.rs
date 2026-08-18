@@ -43,7 +43,12 @@ fn main() -> Result<(), WattwolfError> {
     let reader: Box<dyn Read> = match &config.connection {
         Connection::Socket(addr) => {
             info!(address = %addr, "Connecting to TCP socket");
-            Box::new(TcpStream::connect(addr).map_err(WattwolfError::ConnectionError)?)
+            let stream = TcpStream::connect(addr).map_err(WattwolfError::ConnectionError)?;
+            // read timeout is important if reading (e.g. via ser2net) hangs forever
+            stream
+                .set_read_timeout(Some(Duration::from_secs(30)))
+                .map_err(WattwolfError::ConnectionError)?;
+            Box::new(stream)
         }
         Connection::Device(device) => {
             info!(device = %device, "Opening serial port");
