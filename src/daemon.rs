@@ -30,10 +30,26 @@ pub fn run(config: &Config, reader: Box<dyn Read>) -> Result<(), WattwolfError> 
     let mut last_publish_time = Instant::now();
     let min_publish_interval = Duration::from_secs(config.mqtt.min_publish_interval);
     let max_publish_interval = Duration::from_secs(config.mqtt.max_publish_interval);
+    // we publish discovery messages are being published with expiry, so we have to republish periodically
+    let mut last_discovery_publish_time = Instant::now();
+    let discovery_republish_interval =
+        Duration::from_hours(config.mqtt.discovery_expire_days * 24)
+            .saturating_sub(Duration::from_hours(1));
 
     let mut err_count = 0;
 
     loop {
+        if discovery_republish_interval <= last_discovery_publish_time.elapsed() {
+            if let Err(e) = mqtt_publisher.publish_discovery() {
+                error!(error = %e, "Periodic re-publish of discovery message failed");
+            } else {
+                info!("Periodically re-published discovery message");
+            }
+            // reset regardless of failure so we don't hammer the broker if it's just unreachable;
+            // the next connect will trigger a fresh publish via `on_mqtt_connection_online` anyway
+            last_discovery_publish_time = Instant::now();
+        }
+
         let measurements = sml_reader
             .next::<File>()
             .ok_or(WattwolfError::UnexpectedEndOfStream)
