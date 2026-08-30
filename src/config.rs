@@ -49,7 +49,7 @@ pub struct MqttConfig {
     #[serde(default = "default_max_publish_interval")]
     pub max_publish_interval: u64,
 
-    /// homeassistant topic, used for discorvey and status, defaults to homeassistant
+    /// homeassistant topic, used for the discovery topic prefix, defaults to homeassistant
     #[serde(default = "default_homeassistant_topic")]
     pub homeassistant_topic: String,
 }

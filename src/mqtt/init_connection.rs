@@ -21,11 +21,5 @@ pub fn init_client(config: &MqttConfig) -> (Client, Connection) {
 
     let (client, connection) = Client::new(mqtt_options, 10);
 
-    // subscribe to homeassistant/status. If it publishes "online", we have to re-publish the discovery
-    let ha_status_topic = format!("{}/status", config.homeassistant_topic);
-    client
-        .subscribe(ha_status_topic, QoS::AtMostOnce)
-        .expect("subscribing to topics should not fail");
-
     (client, connection)
 }

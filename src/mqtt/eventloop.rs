@@ -1,5 +1,5 @@
 use crate::mqtt::event_handler::MqttEventHandler;
-use rumqttc::{Connection, Event, Incoming, Publish};
+use rumqttc::{Connection, Event, Incoming};
 use std::time::Duration;
 use tracing::error;
 
@@ -38,9 +38,6 @@ fn handle_connection<H: MqttEventHandler>(mut connection: Connection, handler: &
             // this should be the initial "connection up"
             Ok(Event::Incoming(Incoming::ConnAck(_))) => {
                 handler.on_mqtt_connection_online();
-            }
-            Ok(Event::Incoming(Incoming::Publish(Publish { topic, payload, .. }))) => {
-                handler.on_mqtt_message(topic, payload);
             }
             Ok(_) => {}
         }

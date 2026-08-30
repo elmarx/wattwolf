@@ -1,7 +1,6 @@
 use crate::config::{MqttConfig, Sensor};
 use crate::error::WattwolfError;
 use crate::mqtt::event_handler::MqttEventHandler;
-use bytes::Bytes;
 use rumqttc::{Client, QoS};
 use serde_json::json;
 use tracing::{error, info};
@@ -15,25 +14,16 @@ pub struct MqttPublisher {
     sensors: Vec<Sensor>,
 }
 
-const HA_ONLINE: Bytes = Bytes::from_static(b"online");
-
 /// implement `MqttEventHandler` for `MqttPublisher` directly, as we need to publish messages in reaction to events
 impl MqttEventHandler for MqttPublisher {
-    fn on_mqtt_message(&self, topic: String, payload: Bytes) {
-        // publish the sensor discovery once homeassistant is online
-        // the status-message is not retained, so this just covers the case where Home Assistant (re-)starts while wattwolf is already connected.
-        if topic == format!("{}/status", self.ha_topic) && payload == HA_ONLINE {
-            if let Err(e) = self.publish_discovery() {
-                error!(error = %e, "Publishing discovery message state failed");
-            } else {
-                info!("Published device discovery message");
-            }
-        }
-    }
-
     /// publish discovery and the "online" state once wattwolf's own mqtt connection is established.
+    ///
+    /// Discovery and availability are both published retained, so Home Assistant learns about
+    /// this device/its sensors as soon as it (re-)subscribes, regardless of whether it was
+    /// online at the time of publishing. We don't need to react to Home Assistant's birth
+    /// message (homeassistant/status) for this reason - republishing here, on every successful
+    /// (re-)connect, is enough.
     fn on_mqtt_connection_online(&self) {
-        // we need to publish on startup, since homeassistant/status is not retained. Also on reconnection — maybe homeassistant was offline in the meantime, so better publish it in both cases
         if let Err(e) = self.publish_discovery() {
             error!(error = %e, "Publishing discovery message state failed");
         } else {
@@ -104,11 +94,13 @@ impl MqttPublisher {
         // see discovery topic documentation here: https://www.home-assistant.io/integrations/mqtt/#discovery-topic
         let discovery_topic = format!("{}/sensor/wattwolf/{}/config", self.ha_topic, sensor.name);
 
+        // retained, so Home Assistant receives the discovery config from the broker as soon as
+        // it (re-)subscribes, even if it wasn't online when we published it.
         self.client
             .publish(
                 discovery_topic,
                 QoS::AtLeastOnce,
-                false,
+                true,
                 discovery_payload.to_string(),
             )
             .map_err(WattwolfError::MqttHaDiscovery)?;
