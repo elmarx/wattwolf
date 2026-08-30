@@ -117,7 +117,13 @@ impl MqttPublisher {
         let state_topic = format!("{}/{}/state", self.topic_prefix, sensor_name);
 
         self.client
-            .publish_with_properties(state_topic, QoS::AtLeastOnce, true, value.to_string(), self.publish_properties.clone())
+            .publish_with_properties(
+                state_topic,
+                QoS::AtLeastOnce,
+                true,
+                value.to_string(),
+                self.publish_properties.clone(),
+            )
             .map_err(|e| WattwolfError::MqttSensorPublish(Box::new(e)))?;
 
         Ok(())
@@ -126,7 +132,13 @@ impl MqttPublisher {
     /// Publish "online" to the availability topic
     fn publish_online(&self) -> Result<(), WattwolfError> {
         self.client
-            .publish_with_properties(&self.availability_topic, QoS::AtLeastOnce, true, "online", self.publish_properties.clone())
+            .publish_with_properties(
+                &self.availability_topic,
+                QoS::AtLeastOnce,
+                true,
+                "online",
+                self.publish_properties.clone(),
+            )
             .map_err(|e| WattwolfError::MqttOnlinePublish(Box::new(e)))
     }
 }
