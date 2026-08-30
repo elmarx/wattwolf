@@ -1,5 +1,6 @@
 use crate::config::MqttConfig;
-use rumqttc::{Client, Connection, LastWill, MqttOptions, QoS};
+use rumqttc::v5::mqttbytes::{QoS, v5::LastWill};
+use rumqttc::v5::{Client, Connection, MqttOptions};
 use std::time::Duration;
 
 pub fn init_client(config: &MqttConfig) -> (Client, Connection) {
@@ -16,6 +17,7 @@ pub fn init_client(config: &MqttConfig) -> (Client, Connection) {
         "offline",
         QoS::AtLeastOnce,
         true,
+        None,
     );
     mqtt_options.set_last_will(last_will);
 

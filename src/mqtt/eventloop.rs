@@ -1,5 +1,5 @@
 use crate::mqtt::event_handler::MqttEventHandler;
-use rumqttc::{Connection, Event, Incoming};
+use rumqttc::v5::{Connection, Event, Incoming};
 use std::time::Duration;
 use tracing::error;
 

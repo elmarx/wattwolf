@@ -23,13 +23,13 @@ pub enum WattwolfError {
     ConfigParseError(#[source] toml::de::Error),
 
     #[error("Failed to publish MQTT HomeAssistant sensor autodiscovery message: {0}")]
-    MqttHaDiscovery(#[source] rumqttc::ClientError),
+    MqttHaDiscovery(#[source] Box<rumqttc::v5::ClientError>),
 
     #[error("Failed to publish MQTT sensor measurement: {0}")]
-    MqttSensorPublish(#[source] rumqttc::ClientError),
+    MqttSensorPublish(#[source] Box<rumqttc::v5::ClientError>),
 
     #[error("Failed to publish MQTT availability message: {0}")]
-    MqttOnlinePublish(#[source] rumqttc::ClientError),
+    MqttOnlinePublish(#[source] Box<rumqttc::v5::ClientError>),
 
     #[error(transparent)]
     Sml(#[from] MeasurementError),

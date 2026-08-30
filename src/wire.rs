@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::mqtt;
 use crate::mqtt::{MqttPublisher, init_client};
-use rumqttc::Connection;
+use rumqttc::v5::Connection;
 
 pub fn wire(
     config: &Config,

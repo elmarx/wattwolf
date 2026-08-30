@@ -1,7 +1,9 @@
 use crate::config::{MqttConfig, Sensor};
 use crate::error::WattwolfError;
 use crate::mqtt::event_handler::MqttEventHandler;
-use rumqttc::{Client, QoS};
+use rumqttc::v5::Client;
+use rumqttc::v5::mqttbytes::QoS;
+use rumqttc::v5::mqttbytes::v5::PublishProperties;
 use serde_json::json;
 use tracing::{error, info};
 
@@ -12,17 +14,12 @@ pub struct MqttPublisher {
     ha_topic: String,
     availability_topic: String,
     sensors: Vec<Sensor>,
+    publish_properties: PublishProperties,
 }
 
 /// implement `MqttEventHandler` for `MqttPublisher` directly, as we need to publish messages in reaction to events
 impl MqttEventHandler for MqttPublisher {
     /// publish discovery and the "online" state once wattwolf's own mqtt connection is established.
-    ///
-    /// Discovery and availability are both published retained, so Home Assistant learns about
-    /// this device/its sensors as soon as it (re-)subscribes, regardless of whether it was
-    /// online at the time of publishing. We don't need to react to Home Assistant's birth
-    /// message (homeassistant/status) for this reason - republishing here, on every successful
-    /// (re-)connect, is enough.
     fn on_mqtt_connection_online(&self) {
         if let Err(e) = self.publish_discovery() {
             error!(error = %e, "Publishing discovery message state failed");
@@ -40,13 +37,21 @@ impl MqttEventHandler for MqttPublisher {
 }
 
 impl MqttPublisher {
-    pub fn new(config: &MqttConfig, client: rumqttc::Client, sensors: &[Sensor]) -> Self {
+    pub fn new(config: &MqttConfig, client: rumqttc::v5::Client, sensors: &[Sensor]) -> Self {
         Self {
             client,
             topic_prefix: config.topic_prefix.clone(),
             availability_topic: config.availability_topic.clone(),
             ha_topic: config.homeassistant_topic.clone(),
             sensors: sensors.to_vec(),
+            // publish properties, as we retain messages, but do not want to keep them forever
+            publish_properties: PublishProperties {
+                message_expiry_interval: Some(
+                    u32::try_from(config.discovery_expire_days * 24 * 60 * 60)
+                        .unwrap_or(7 * 24 * 60 * 60),
+                ),
+                ..Default::default()
+            },
         }
     }
 
@@ -94,16 +99,15 @@ impl MqttPublisher {
         // see discovery topic documentation here: https://www.home-assistant.io/integrations/mqtt/#discovery-topic
         let discovery_topic = format!("{}/sensor/wattwolf/{}/config", self.ha_topic, sensor.name);
 
-        // retained, so Home Assistant receives the discovery config from the broker as soon as
-        // it (re-)subscribes, even if it wasn't online when we published it.
         self.client
-            .publish(
+            .publish_with_properties(
                 discovery_topic,
                 QoS::AtLeastOnce,
                 true,
                 discovery_payload.to_string(),
+                self.publish_properties.clone(),
             )
-            .map_err(WattwolfError::MqttHaDiscovery)?;
+            .map_err(|e| WattwolfError::MqttHaDiscovery(Box::new(e)))?;
 
         Ok(())
     }
@@ -113,8 +117,8 @@ impl MqttPublisher {
         let state_topic = format!("{}/{}/state", self.topic_prefix, sensor_name);
 
         self.client
-            .publish(state_topic, QoS::AtLeastOnce, true, value.to_string())
-            .map_err(WattwolfError::MqttSensorPublish)?;
+            .publish_with_properties(state_topic, QoS::AtLeastOnce, true, value.to_string(), self.publish_properties.clone())
+            .map_err(|e| WattwolfError::MqttSensorPublish(Box::new(e)))?;
 
         Ok(())
     }
@@ -122,7 +126,7 @@ impl MqttPublisher {
     /// Publish "online" to the availability topic
     fn publish_online(&self) -> Result<(), WattwolfError> {
         self.client
-            .publish(&self.availability_topic, QoS::AtLeastOnce, true, "online")
-            .map_err(WattwolfError::MqttOnlinePublish)
+            .publish_with_properties(&self.availability_topic, QoS::AtLeastOnce, true, "online", self.publish_properties.clone())
+            .map_err(|e| WattwolfError::MqttOnlinePublish(Box::new(e)))
     }
 }

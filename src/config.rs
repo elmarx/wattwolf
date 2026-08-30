@@ -52,6 +52,12 @@ pub struct MqttConfig {
     /// homeassistant topic, used for the discovery topic prefix, defaults to homeassistant
     #[serde(default = "default_homeassistant_topic")]
     pub homeassistant_topic: String,
+
+    /// Number of days after which the (retained) discovery message expires at the broker if not
+    /// refreshed. Prevents "ghost" entities from sticking around forever should wattwolf be
+    /// decommissioned. Defaults to 7 days.
+    #[serde(default = "default_discovery_expire_days")]
+    pub discovery_expire_days: u64,
 }
 
 impl MqttConfig {
@@ -93,6 +99,10 @@ fn default_availability_topic() -> String {
 
 fn default_homeassistant_topic() -> String {
     "homeassistant".to_string()
+}
+
+fn default_discovery_expire_days() -> u64 {
+    7
 }
 
 fn default_min_publish_interval() -> u64 {
