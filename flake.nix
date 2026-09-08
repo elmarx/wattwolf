@@ -94,7 +94,7 @@
         };
 
         overlays.default = final: prev: {
-          wattwolf = inputs.self.packages.${final.system}.default;
+          wattwolf = inputs.self.packages.${final.stdenv.hostPlatform.system}.default;
         };
       };
     };
