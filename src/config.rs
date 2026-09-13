@@ -160,7 +160,6 @@ impl Config {
 
 pub fn get_config_path(config_from_cli: Option<PathBuf>) -> Option<PathBuf> {
     config_from_cli
-        .or_else(|| std::env::var("WATTWOLF_CONFIG").map(PathBuf::from).ok())
         .or_else(|| {
             let config_in_cwd = PathBuf::from("config.toml");
             config_in_cwd.exists().then_some(config_in_cwd)

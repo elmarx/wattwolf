@@ -4,7 +4,7 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Args {
-    #[arg(short, long)]
+    #[arg(short, long, env = "WATTWOLF_CONFIG")]
     pub config: Option<PathBuf>,
 
     #[command(subcommand)]
