@@ -3,6 +3,7 @@ use crate::obis::ObisKeyFigure;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 /// A wrapper type for sensitive values that hides the content when formatted with Debug
 #[derive(Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -42,22 +43,22 @@ pub struct MqttConfig {
     pub topic_prefix: String,
     #[serde(default = "default_availability_topic")]
     pub availability_topic: String,
-    /// Minimum interval in seconds to publish values, i.e.: do not send intervals more often than this value
-    #[serde(default = "default_min_publish_interval")]
-    pub min_publish_interval: u64,
-    /// Maximum interval in seconds to publish values, i.e.: publish values at least every `max_publish_interval` seconds
-    #[serde(default = "default_max_publish_interval")]
-    pub max_publish_interval: u64,
+    /// Minimum interval to publish values, i.e.: do not send values more often than this
+    #[serde(default = "default_min_publish_interval", with = "humantime_serde")]
+    pub min_publish_interval: Duration,
+    /// Maximum interval to publish values, i.e.: publish values at least every `max_publish_interval`
+    #[serde(default = "default_max_publish_interval", with = "humantime_serde")]
+    pub max_publish_interval: Duration,
 
     /// homeassistant topic, used for the discovery topic prefix, defaults to homeassistant
     #[serde(default = "default_homeassistant_topic")]
     pub homeassistant_topic: String,
 
-    /// Number of days after which the (retained) discovery message expires at the broker if not
+    /// Duration after which the (retained) discovery message expires at the broker if not
     /// refreshed. Prevents "ghost" entities from sticking around forever should wattwolf be
     /// decommissioned. Defaults to 7 days.
-    #[serde(default = "default_discovery_expire_days")]
-    pub discovery_expire_days: u64,
+    #[serde(default = "default_discovery_expire", with = "humantime_serde")]
+    pub discovery_expire: Duration,
 }
 
 impl MqttConfig {
@@ -101,16 +102,16 @@ fn default_homeassistant_topic() -> String {
     "homeassistant".to_string()
 }
 
-fn default_discovery_expire_days() -> u64 {
-    7
+pub fn default_discovery_expire() -> Duration {
+    Duration::from_hours(7 * 24)
 }
 
-fn default_min_publish_interval() -> u64 {
-    10
+fn default_min_publish_interval() -> Duration {
+    Duration::from_secs(10)
 }
 
-fn default_max_publish_interval() -> u64 {
-    300
+fn default_max_publish_interval() -> Duration {
+    Duration::from_mins(5)
 }
 
 #[derive(Debug, Deserialize, Serialize)]

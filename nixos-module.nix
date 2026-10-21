@@ -116,15 +116,17 @@ in
           };
 
           minPublishInterval = mkOption {
-            type = types.ints.unsigned;
-            default = 10;
-            description = "Minimum interval in seconds between published values, i.e. do not send updates more often than this.";
+            type = types.str;
+            default = "10s";
+            example = "30s";
+            description = "Minimum interval between published values (humantime format, e.g. \"10s\"), i.e. do not send updates more often than this.";
           };
 
           maxPublishInterval = mkOption {
-            type = types.ints.unsigned;
-            default = 300;
-            description = "Maximum interval in seconds between published values, i.e. publish at least this often.";
+            type = types.str;
+            default = "5m";
+            example = "15m";
+            description = "Maximum interval between published values (humantime format, e.g. \"5m\"), i.e. publish at least this often.";
           };
         };
       };

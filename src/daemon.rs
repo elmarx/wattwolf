@@ -28,11 +28,13 @@ pub fn run(config: &Config, reader: Box<dyn Read>) -> Result<(), WattwolfError> 
     // Track last published values and timestamp
     let mut last_published_values: HashMap<String, u64> = HashMap::new();
     let mut last_publish_time = Instant::now();
-    let min_publish_interval = Duration::from_secs(config.mqtt.min_publish_interval);
-    let max_publish_interval = Duration::from_secs(config.mqtt.max_publish_interval);
+    let min_publish_interval = config.mqtt.min_publish_interval;
+    let max_publish_interval = config.mqtt.max_publish_interval;
     // we publish discovery messages are being published with expiry, so we have to republish periodically
     let mut last_discovery_publish_time = Instant::now();
-    let discovery_republish_interval = Duration::from_hours(config.mqtt.discovery_expire_days * 24)
+    let discovery_republish_interval = config
+        .mqtt
+        .discovery_expire
         .saturating_sub(Duration::from_hours(1));
 
     let mut err_count = 0;

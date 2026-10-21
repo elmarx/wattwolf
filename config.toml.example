@@ -16,9 +16,12 @@ host = "localhost" # Can be overridden with MQTT_HOST env var
 port = 1883  # Optional, defaults to 1883
 topic_prefix = "wattwolf"  # Optional, defaults to "wattwolf"
 availability_topic = "wattwolf/availability"  # Optional, defaults to wattwolf/availability, used by Home Assistant to determine if the device is online.
-min_publish_interval = 300  # Optional, defaults to 300 seconds (5 minutes)
-                            # Minimum interval to force-publish values even if they haven't changed
-                            # Values are also published whenever ANY sensor value changes
+min_publish_interval = "10s"  # Optional, defaults to 10s. Do not publish values more often than this.
+max_publish_interval = "5m"   # Optional, defaults to 5m. Force-publish values at least this often,
+                              # even if they haven't changed. Values are also published whenever ANY sensor value changes
+discovery_expire = "7d"       # Optional, defaults to 7d. Retained discovery messages expire at the broker after this
+                              # (they're periodically re-published), so entities don't linger if wattwolf is decommissioned
+# Durations use humantime format, e.g. "30s", "5m", "1h 30m", "7d"
 # username = "your_mqtt_username"  # Optional, can be overridden with MQTT_USERNAME env var
 # password = "your_mqtt_password"  # Optional, can be overridden with MQTT_PASSWORD env var
 

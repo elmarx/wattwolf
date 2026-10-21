@@ -1,4 +1,4 @@
-use crate::config::{MqttConfig, Sensor};
+use crate::config::{MqttConfig, Sensor, default_discovery_expire};
 use crate::error::WattwolfError;
 use crate::mqtt::event_handler::MqttEventHandler;
 use rumqttc::v5::Client;
@@ -47,8 +47,9 @@ impl MqttPublisher {
             // publish properties, as we retain messages, but do not want to keep them forever
             publish_properties: PublishProperties {
                 message_expiry_interval: Some(
-                    u32::try_from(config.discovery_expire_days * 24 * 60 * 60)
-                        .unwrap_or(7 * 24 * 60 * 60),
+                    u32::try_from(config.discovery_expire.as_secs()).unwrap_or_else(|_| {
+                        u32::try_from(default_discovery_expire().as_secs()).unwrap_or(u32::MAX)
+                    }),
                 ),
                 ..Default::default()
             },
